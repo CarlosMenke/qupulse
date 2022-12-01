@@ -166,7 +166,11 @@ class HDAWGProgramManagement(ProgramManagement):
         #    ch_pair._wait_for_compile_and_upload()
         self.enable(True)
  
-class TaborChannelTuple(AWGChannelTuple):
+########################################################################################################################
+# ChannelTuple
+########################################################################################################################
+# Features
+class HDAWGChannelTuple(AWGChannelTuple):
     pass
 
 class HDAWGException(Exception):
