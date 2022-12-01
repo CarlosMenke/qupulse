@@ -16,6 +16,9 @@ from qupulse.pulses.parameters import ConstantParameter
 from qupulse.hardware.util import traced
 
 
+########################################################################################################################
+# ChannelTuple
+########################################################################################################################
 @traced
 class HDAWGProgramManagement(ProgramManagement):
     MIN_WAVEFORM_LEN = 192
@@ -166,9 +169,6 @@ class HDAWGProgramManagement(ProgramManagement):
         #    ch_pair._wait_for_compile_and_upload()
         self.enable(True)
  
-########################################################################################################################
-# ChannelTuple
-########################################################################################################################
 # Features
 class HDAWGChannelTuple(AWGChannelTuple):
     pass
