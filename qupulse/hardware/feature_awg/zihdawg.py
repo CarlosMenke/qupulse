@@ -11,6 +11,7 @@ from qupulse.utils.types import ChannelID, TimeType, time_from_float
 from qupulse._program._loop import Loop, make_compatible
 from qupulse._program.seqc import HDAWGProgramManager, UserRegister, WaveformFileSystem
 from qupulse.hardware.awgs.base import AWG, ChannelNotFoundException, AWGAmplitudeOffsetHandling
+from qupulse.hardware.feature_awg.base import AWGChannelTuple, AWGChannel, AWGDevice, AWGMarkerChannel
 from qupulse.pulses.parameters import ConstantParameter
 from qupulse.hardware.util import traced
 
@@ -20,7 +21,9 @@ class HDAWGProgramManagement(ProgramManagement):
     MIN_WAVEFORM_LEN = 192
     WAVEFORM_LEN_QUANTUM = 16
      
-    #TODO implement __init__()
+    #TODO check if channel_tuple is needed
+    def __init__(self, channel_tuple: "HDAWGChannelTuple"):
+        pass
      
     def upload(self, name: str,
                program: Loop,
@@ -163,11 +166,12 @@ class HDAWGProgramManagement(ProgramManagement):
         #    ch_pair._wait_for_compile_and_upload()
         self.enable(True)
  
+class TaborChannelTuple(AWGChannelTuple):
+    pass
+
 class HDAWGException(Exception):
     """Base exception class for HDAWG errors."""
     pass
 
 class HDAWGValueError(HDAWGException, ValueError):
     pass
-
-
