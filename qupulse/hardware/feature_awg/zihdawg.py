@@ -1,3 +1,4 @@
+#TODO remove unused imports.
 from qupulse.hardware.awgs.base import AWG, ChannelNotFoundException
 from qupulse._program.seqc import HDAWGProgramManager
 from qupulse.hardware.util import traced
@@ -16,8 +17,10 @@ from qupulse.hardware.util import traced
 
 @traced
 class HDAWGProgramManagement(ProgramManagement):
-    #TODO add __init__ function
+    MIN_WAVEFORM_LEN = 192
+    WAVEFORM_LEN_QUANTUM = 16
      
+    #TODO implement __init__()
      
     def upload(self, name: str,
                program: Loop,
@@ -95,6 +98,70 @@ class HDAWGProgramManagement(ProgramManagement):
 
         # start compiling the source (non-blocking)
         self._start_compile_and_upload()
+
+    def remove(self, name: str) -> None:
+        """Remove a program from the AWG.
+
+        Also discards all waveforms referenced only by the program identified by name.
+
+        Args:
+            name: The name of the program to remove.
+        """
+        self._program_manager.remove(name)
+        self._required_seqc_source = self._program_manager.to_seqc_program()
+
+    def clear(self) -> None:
+        """Removes all programs and waveforms from the AWG.
+
+        Caution: This affects all programs and waveforms on the AWG, not only those uploaded using qupulse!
+        """
+        self._program_manager.clear()
+        self._current_program = None
+        self._required_seqc_source = self._program_manager.to_seqc_program()
+        self._start_compile_and_upload()
+        self.arm(None)
+
+    def arm(self, name: Optional[str]) -> None:
+        """Load the program 'name' and arm the device for running it. If name is None the awg will "dearm" its current
+        program.
+
+        Currently hardware triggering is not implemented. The HDAWGProgramManager needs to emit code that calls
+        `waitDigTrigger` to do that.
+        """
+        if self.num_channels > 8:
+            if name is None:
+                self._required_seqc_source = ""
+            else:
+                self._required_seqc_source = self._program_manager.to_seqc_program(name)
+            self._start_compile_and_upload()
+
+        if self._required_seqc_source != self._uploaded_seqc_source:
+            self._wait_for_compile_and_upload()
+
+        self.user_register(self._program_manager.Constants.TRIGGER_REGISTER, 0)
+
+        if name is None:
+            self.user_register(self._program_manager.Constants.PROG_SEL_REGISTER,
+                               self._program_manager.Constants.PROG_SEL_NONE)
+            self._current_program = None
+        else:
+            if name not in self.programs:
+                raise HDAWGValueError('{} is unknown on {}'.format(name, self.identifier))
+            self._current_program = name
+
+            # set the registers of initial repetition counts
+            for register, value in self._program_manager.get_register_values(name).items():
+                assert register not in (self._program_manager.Constants.PROG_SEL_REGISTER,
+                                        self._program_manager.Constants.TRIGGER_REGISTER)
+                self.user_register(register, value)
+
+            self.user_register(self._program_manager.Constants.PROG_SEL_REGISTER,
+                               self._program_manager.name_to_index(name) | int(self._program_manager.Constants.NO_RESET_MASK, 2))
+
+        # this was a workaround for problems in the past and I totally forgot why it was here
+        # for ch_pair in self.master.channel_tuples:
+        #    ch_pair._wait_for_compile_and_upload()
+        self.enable(True)
  
 class HDAWGException(Exception):
     """Base exception class for HDAWG errors."""
