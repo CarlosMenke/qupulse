@@ -2,7 +2,7 @@
 from qupulse.hardware.awgs.base import AWG, ChannelNotFoundException
 from qupulse._program.seqc import HDAWGProgramManager
 from qupulse.hardware.util import traced
-from typing import Tuple, Callable, Optional
+from typing import Tuple, Callable, Optional, Union
 from qupulse.hardware.feature_awg.features import ChannelSynchronization, AmplitudeOffsetHandling, VoltageRange, \
     ProgramManagement, ActivatableChannels, DeviceControl, StatusTable, SCPI, VolatileParameters, \
     ReadProgram, RepetitionMode
@@ -169,13 +169,55 @@ class HDAWGProgramManagement(ProgramManagement):
         #    ch_pair._wait_for_compile_and_upload()
         self.enable(True)
  
+
+########################################################################################################################
+# Channel
+########################################################################################################################
 # Features
+class HDAWGVoltageRange(VoltageRange):
+    #TODO Implement all function from features.py
+    def __init__(self, channel: "HDAWGChannelTuple"):
+        pass
+
+    @property
+    #TODO check if @with_select needs to be added?
+    def offset(self) -> float:
+        """Get offset of AWG channel"""
+        pass
+
+    @property
+    #TODO check if @with_select needs to be added?
+    def amplitude(self) -> float:
+        """Get amplitude of AWG channel"""
+        pass
+
+    @property
+    def amplitude_offset_handling(self) -> AmplitudeOffsetHandling:
+        """
+        Gets the amplitude and offset handling of this channel. The amplitude-offset controls if the amplitude and
+        offset settings are constant or if these should be optimized by the driver
+        """
+        pass
+
+    @amplitude_offset_handling.setter
+    def amplitude_offset_handling(self, amp_offs_handling: Union[AmplitudeOffsetHandling, str]) -> None:
+        """
+        amp_offs_handling: See possible values at `AWGAmplitudeOffsetHandling`
+        """
+        pass
+
+    def _select(self) -> None:
+        self._parent()._select()
+
+
 class HDAWGChannelTuple(AWGChannelTuple):
     pass
+
 
 class HDAWGException(Exception):
     """Base exception class for HDAWG errors."""
     pass
+
 
 class HDAWGValueError(HDAWGException, ValueError):
     pass
