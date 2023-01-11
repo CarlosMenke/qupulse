@@ -16,6 +16,17 @@ from qupulse.pulses.parameters import ConstantParameter
 from qupulse.hardware.util import traced
 
 
+def _sigout_double(api_session, prop: str, serial: str, channel: int, value: float = None) -> float:
+    """Query channel offset voltage and optionally set it."""
+    node_path = f'/{serial}/sigouts/{channel-1:d}/{prop}'
+    if value is not None:
+        api_session.setDouble(node_path, value)
+        api_session.sync()  # Global sync: Ensure settings have taken effect on the device.
+    return api_session.getDouble(node_path)
+
+def _sigout_offset(api_session, serial: str, channel: int, voltage: float = None) -> float:
+    return _sigout_double(api_session, 'offset', serial, channel, voltage)
+
 ########################################################################################################################
 # ChannelTuple
 ########################################################################################################################
@@ -208,6 +219,16 @@ class HDAWGVoltageRange(VoltageRange):
 
     def _select(self) -> None:
         self._parent()._select()
+
+@traced
+class HDAWGRepresentation:
+    """HDAWGRepresentation represents an HDAWG8 instruments and manages a LabOne data server api session. A data server
+    must be running and the device be discoverable. Channels are per default grouped into pairs."""
+
+    @valid_channel
+    def offset(self, channel: int, voltage: float = None) -> float:
+        """Query channel offset voltage and optionally set it."""
+        return _sigout_offset(self.api_session, self.serial, channel, voltage)
 
 
 class HDAWGChannelTuple(AWGChannelTuple):
